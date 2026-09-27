@@ -1,0 +1,63 @@
+{
+  "data_source": "Kaggle: Retail Store Inventory Forecasting Dataset",
+  "source_url": "https://www.kaggle.com/datasets/anirudhchauhan/retail-store-inventory-forecasting-dataset",
+  "license": "CC0 Public Domain",
+  "rows": 73100,
+  "features": [
+    73100,
+    16
+  ],
+  "threshold": 0.3954532494843058,
+  "threshold_percentile": 95,
+  "feature_columns": [
+    "Date",
+    "Store ID",
+    "Product ID",
+    "Category",
+    "Region",
+    "Inventory Level",
+    "Units Sold",
+    "Units Ordered",
+    "Demand Forecast",
+    "Price",
+    "Discount",
+    "Weather Condition",
+    "Holiday/Promotion",
+    "Competitor Pricing",
+    "Seasonality",
+    "Stock_to_Sales_Ratio",
+    "Days_of_Inventory",
+    "Order_to_Sales_Ratio",
+    "Demand_Change",
+    "Rolling_Sales_Average",
+    "Forecast_Gap",
+    "Price_Gap",
+    "Inventory_Value"
+  ],
+  "model_weights": {
+    "kde": 0.3,
+    "gmm": 0.3,
+    "kmeans": 0.2,
+    "baseline_iqr": 0.2
+  },
+  "report": {
+    "records": 73100,
+    "threshold": 0.3954532494843058,
+    "anomalies": 3655,
+    "anomaly_percentage": 5.0,
+    "mean_score": 0.14692739587807907,
+    "model_comparison": {
+      "kde_score": 5.0,
+      "gmm_score": 5.0,
+      "kmeans_score": 5.0,
+      "baseline_score": 5.002735978112175
+    },
+    "silhouette_score": 0.8169396681846585
+  },
+  "plots": {
+    "sales_dist": "/static\\plots\\sales_distribution.png",
+    "sales_stock": "/static\\plots\\sales_vs_stock.png",
+    "correlation": "/static\\plots\\correlation_heatmap.png",
+    "trend": "/static\\plots\\time_trend.png"
+  }
+}

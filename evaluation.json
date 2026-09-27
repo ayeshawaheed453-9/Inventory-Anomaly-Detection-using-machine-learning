@@ -1,0 +1,14 @@
+{
+  "records": 73100,
+  "threshold": 0.3954532494843058,
+  "anomalies": 3655,
+  "anomaly_percentage": 5.0,
+  "mean_score": 0.14692739587807907,
+  "model_comparison": {
+    "kde_score": 5.0,
+    "gmm_score": 5.0,
+    "kmeans_score": 5.0,
+    "baseline_score": 5.002735978112175
+  },
+  "silhouette_score": 0.8169396681846585
+}

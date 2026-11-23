@@ -202,8 +202,8 @@ main a:not(.btn):not(.anomalies-download):not(.anomalies-page-button):not(.dashb
 .upload-dropzone:hover,.upload-dropzone:focus-within,.upload-dropzone.is-dragging,.upload-dropzone.has-file{border-color:var(--accent-dark);background:var(--accent-soft)}
 .upload-file-input:focus,.upload-dropzone:focus-within{box-shadow:0 0 0 .2rem rgba(245,158,11,.16)}
 .upload-privacy-note i,.required-columns-list li i,.upload-schema-toggle{color:var(--accent-dark)}
-.upload-page .btn-teal,.upload-submit{background:var(--accent);border-color:var(--accent);color:#422006}
-.upload-page .btn-teal:hover,.upload-submit:hover{background:#d97706;border-color:#d97706;color:#422006}
+.upload-page .btn-teal,.upload-submit{background:var(--accent);border-color:var(--accent);color:#000}
+.upload-page .btn-teal:hover,.upload-submit:hover{background:#d97706;border-color:#d97706;color:#000}
 .upload-hero{background:linear-gradient(125deg,#0f172a,#78350f)}
 .upload-eyebrow{color:#fde68a}
 .upload-hero-icon{border-color:rgba(253,230,138,.35);background:rgba(245,158,11,.2)}

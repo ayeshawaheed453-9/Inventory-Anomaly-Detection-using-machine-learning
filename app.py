@@ -92,7 +92,19 @@ def anomalies():
         try:
             minimum=float(request.args.get('min_score','0')); df=df[df['Anomaly Score']>=minimum]
         except ValueError: pass
-    return render_template('anomalies.html', rows=view_rows(df), total=len(df), filters={'products':sorted(df['Product ID'].dropna().astype(str).unique()) if not df.empty else [],'stores':sorted(df['Store ID'].dropna().astype(str).unique()) if not df.empty else []})
+    page_size=50
+    total=len(df)
+    total_pages=max(1,(total+page_size-1)//page_size)
+    page=request.args.get('page',1,type=int) or 1
+    page=min(max(1,page),total_pages)
+    start=(page-1)*page_size
+    page_df=df.iloc[start:start+page_size]
+    rows=view_rows(page_df)
+    for row,row_id in zip(rows,page_df.index):
+        row['_row_id']=int(row_id)
+        row['_row_number']=int(row_id)+1
+    columns=[col for col in ['Date','Product ID','Category','Store ID','Inventory Level','Units Sold','Inventory_Turnover','Anomaly Score','Status','Recommended Action'] if col in df.columns]
+    return render_template('anomalies.html', rows=rows, total=total, page=page, total_pages=total_pages, start_row=start+1 if total else 0, end_row=start+len(rows), columns=columns, filters={'products':sorted(df['Product ID'].dropna().astype(str).unique()) if not df.empty else [],'stores':sorted(df['Store ID'].dropna().astype(str).unique()) if not df.empty else []})
 
 @app.route('/details/<int:row_id>')
 def details(row_id):

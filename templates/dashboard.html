@@ -1,1 +1,160 @@
-{% extends 'base.html' %}{% block title %}Dashboard · Inventory Intelligence{% endblock %}{% block content %}<div class="d-flex justify-content-between align-items-end mb-4"><div><div class="eyebrow">CONTROL ROOM</div><h1>Inventory dashboard</h1><p class="text-muted mb-0">A ranked view of unusual operational behavior.</p></div><a class="btn btn-teal" href="{{ url_for('analyze') }}"><i class="bi bi-arrow-clockwise"></i> Re-run analysis</a></div><div class="row g-3 mb-4">{% for label,value,icon in [('Total records',summary.total,'bi-database'),('Normal records',summary.normal,'bi-check2-circle'),('Anomalies',summary.anomalies,'bi-exclamation-diamond'),('Anomaly rate',summary.pct ~ '%','bi-percent'),('Avg stock',summary.avg_stock,'bi-box-seam'),('Avg daily sales',summary.avg_sales,'bi-graph-up'),('Avg turnover',summary.avg_turnover,'bi-arrow-repeat')] %}<div class="col-6 col-md-4 col-xl-?"><div class="metric"><i class="bi {{ icon }}"></i><span>{{ label }}</span><strong>{{ '{:,}'.format(value) if value is number else value }}</strong></div></div>{% endfor %}</div><div class="row g-4"><div class="col-lg-4"><div class="card p-3"><h3 class="chart-title">Normal vs anomaly</h3><canvas id="statusChart"></canvas></div></div><div class="col-lg-8"><div class="card p-3"><h3 class="chart-title">Anomaly score distribution</h3><canvas id="scoreChart"></canvas></div></div><div class="col-lg-7"><div class="card p-3"><h3 class="chart-title">Sales vs stock</h3><canvas id="scatterChart"></canvas></div></div><div class="col-lg-5"><div class="card p-3"><h3 class="chart-title">Anomalies by product</h3><canvas id="productChart"></canvas></div></div><div class="col-12"><div class="card p-3"><h3 class="chart-title">Time-based anomaly trend</h3><canvas id="trendChart"></canvas></div></div></div>{% endblock %}{% block scripts %}<script>const C={{ charts|tojson }};const teal='#16b8a6',orange='#f59e0b',ink='#0f172a';new Chart(statusChart,{type:'doughnut',data:{labels:['Normal','Anomaly'],datasets:[{data:C.status,backgroundColor:[teal,orange]}]},options:{plugins:{legend:{position:'bottom'}}}});new Chart(scoreChart,{type:'bar',data:{labels:C.scores.map((_,i)=>i+1),datasets:[{label:'score',data:C.scores,backgroundColor:orange}]},options:{scales:{x:{display:false},y:{beginAtZero:true,max:1}}}});new Chart(productChart,{type:'bar',data:{labels:C.product_labels,datasets:[{label:'anomalies',data:C.product_values,backgroundColor:teal}]},options:{indexAxis:'y',plugins:{legend:{display:false}}}});new Chart(scatterChart,{type:'scatter',data:{datasets:[{label:'PCA observations',data:C.pca.x.map((x,i)=>({x:x,y:C.pca.y[i]})),backgroundColor:C.pca.status.map(s=>s==='ANOMALY'?orange:teal),pointRadius:2}]},options:{scales:{x:{title:{display:true,text:'PCA component 1'}},y:{title:{display:true,text:'PCA component 2'}}}}});new Chart(trendChart,{type:'line',data:{labels:C.trend_labels,datasets:[{label:'anomalies',data:C.trend_values,borderColor:teal,backgroundColor:'rgba(22,184,166,.15)',fill:true,tension:.3}]}});</script>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Dashboard · Inventory Intelligence{% endblock %}
+{% block content %}
+<section class="dashboard-hero mb-4">
+  <div class="dashboard-hero-glow"></div>
+  <div class="dashboard-hero-content">
+    <div class="dashboard-hero-copy">
+      <div class="dashboard-hero-eyebrow">
+        <span class="dashboard-heading-mark"><i class="bi bi-grid-1x2-fill"></i></span>
+        <span>INTELLIGENCE DASHBOARD</span>
+        <span class="dashboard-live-badge"><span></span>{{ 'LIVE CSV' if generic else 'LIVE INVENTORY' }}</span>
+      </div>
+      <h1 class="mb-2">Analysis overview</h1>
+      <p>
+        {% if generic %}Explore patterns and unusual activity across your uploaded data.{% else %}Monitor inventory records and review anomaly signals at a glance.{% endif %}
+      </p>
+    </div>
+    <div class="dashboard-hero-actions">
+      <a class="dashboard-action dashboard-action-secondary" href="{{ url_for('upload') }}"><i class="bi bi-upload"></i><span>Upload</span></a>
+      {% if not generic %}<a class="dashboard-action dashboard-action-primary" href="{{ url_for('analyze') }}"><i class="bi bi-arrow-clockwise"></i><span>Refresh</span></a>{% endif %}
+    </div>
+  </div>
+</section>
+
+<div class="row g-3 mb-4 dashboard-metrics">
+  {% for label,value,icon,tone in [
+    ('Total records',summary.total,'bi-database','blue'),
+    ('Flagged anomalies',summary.anomalies,'bi-exclamation-diamond','orange'),
+    ('Normal records',summary.normal,'bi-check2-circle','green'),
+    ('Anomaly rate',summary.pct ~ '%','bi-percent','purple')
+  ] %}
+  <div class="col-6 col-xl-3">
+    <div class="dashboard-metric h-100">
+      <span class="dashboard-metric-icon {{ tone }}"><i class="bi {{ icon }}"></i></span>
+      <span class="dashboard-metric-label">{{ label }}</span>
+      <strong>{{ '{:,}'.format(value) if value is number else value }}</strong>
+      <span class="dashboard-metric-detail">
+        {% if label == 'Total records' %}Included in this analysis
+        {% elif label == 'Flagged anomalies' %}Marked for review
+        {% elif label == 'Normal records' %}Not flagged by the model
+        {% else %}Of all analyzed records{% endif %}
+      </span>
+      {% if label == 'Anomaly rate' %}
+      <div class="dashboard-rate-track">
+        <progress max="100" value="{{ summary.pct }}" aria-label="Anomaly rate"></progress>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if not summary.total %}
+<div class="card dashboard-empty p-5 text-center">
+  <i class="bi bi-bar-chart-line display-5 text-secondary mb-3"></i>
+  <h2 class="h5">No analysis results yet</h2>
+  <p class="text-muted mb-3">Upload a CSV file or run the inventory analysis to show dashboard charts.</p>
+  <div><a class="btn btn-teal" href="{{ url_for('upload') }}">Upload CSV</a></div>
+</div>
+{% else %}
+<div class="dashboard-context d-flex flex-column flex-md-row justify-content-between gap-2 mb-4">
+  <div class="dashboard-context-item"><i class="bi bi-cpu"></i><span><strong>Detection method</strong><small>Isolation Forest</small></span></div>
+  <div class="dashboard-context-item"><i class="bi bi-sliders"></i><span><strong>Score cutoff</strong><small>{{ '%.3f'|format(charts.threshold) if charts.threshold is not none else 'Not available' }}</small></span></div>
+  <div class="dashboard-context-note"><i class="bi bi-info-circle"></i>{% if generic %}Scores are relative to this upload, not probabilities.{% else %}An alert is a review signal, not proof of an error.{% endif %}</div>
+</div>
+<div class="row g-4 dashboard-grid">
+  <div class="col-lg-5">
+    <section class="card dashboard-card h-100">
+      <div class="dashboard-card-heading">
+        <div><span class="dashboard-card-kicker">RECORD STATUS</span><h2 class="chart-title">Normal vs anomaly</h2></div>
+      </div>
+      <p class="dashboard-card-note">Share of all analyzed records in each status.</p>
+      <div class="dashboard-chart"><canvas id="statusChart" aria-label="Normal and anomaly record counts"></canvas></div>
+    </section>
+  </div>
+  <div class="col-lg-7">
+    <section class="card dashboard-card h-100">
+      <div><span class="dashboard-card-kicker">SCORE PROFILE</span><h2 class="chart-title">Anomaly score distribution</h2></div>
+      <p class="dashboard-card-note" id="scoreChartNote">Score bands are split by each record’s actual status. The cutoff is shown above.</p>
+      <div class="dashboard-chart"><canvas id="scoreChart" aria-label="Distribution of anomaly scores"></canvas></div>
+    </section>
+  </div>
+
+  {% if generic %}
+  <div class="col-12">
+    <section class="card dashboard-card">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-2">
+        <div><span class="dashboard-card-kicker">FEATURE EXPLORER</span><h2 class="chart-title mb-0">Compare values by row</h2></div>
+        <div class="feature-select-wrap">
+          <label class="visually-hidden" for="featureSelect">Numeric feature</label>
+          <select id="featureSelect" class="form-select" aria-label="Choose a numeric feature">
+            {% for feature in features %}<option value="{{ feature }}" {% if feature == charts.feature_name %}selected{% endif %}>{{ feature }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <p class="dashboard-card-note" id="featureChartTitle">{{ charts.feature_name }} values by row · normal records in teal, anomalies in orange.</p>
+      <div id="featureChartError" class="alert alert-danger d-none" role="alert"></div>
+      <div class="dashboard-chart dashboard-chart-wide"><canvas id="genericFeatureChart" aria-label="Selected feature values by row"></canvas></div>
+    </section>
+  </div>
+  <div class="col-lg-6">
+    <section class="card dashboard-card">
+      <span class="dashboard-card-kicker">FEATURE DISTRIBUTION</span><h2 class="chart-title">Selected feature values</h2>
+      <p class="dashboard-card-note">Value ranges are split by each record’s status.</p>
+      <div class="dashboard-chart"><canvas id="featureDistributionChart" aria-label="Selected feature value distribution by record status"></canvas></div>
+    </section>
+  </div>
+  {% if charts.category_labels %}
+  <div class="col-lg-6">
+    <section class="card dashboard-card">
+      <span class="dashboard-card-kicker">GROUP BREAKDOWN</span><h2 class="chart-title">Anomaly rate by {{ charts.category_name }}</h2>
+      <p class="dashboard-card-note">Hover to compare flagged rows with the total in each group.</p>
+      <div class="dashboard-chart"><canvas id="categoryChart" aria-label="Anomaly rate by category"></canvas></div>
+    </section>
+  </div>
+  {% endif %}
+  {% if charts.trend_labels %}
+  <div class="{% if charts.category_labels %}col-lg-6{% else %}col-12{% endif %}">
+    <section class="card dashboard-card">
+      <span class="dashboard-card-kicker">TIME TREND</span><h2 class="chart-title">Anomaly rate · {{ charts.date_name }}</h2>
+      <p class="dashboard-card-note">Rate is calculated from flagged rows per period.</p>
+      <div class="dashboard-chart dashboard-chart-wide"><canvas id="genericTrendChart" aria-label="Anomaly rate over time"></canvas></div>
+    </section>
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="col-lg-7">
+    <section class="card dashboard-card">
+      <span class="dashboard-card-kicker">SALES & INVENTORY</span><h2 class="chart-title">Sales vs stock</h2>
+      <p class="dashboard-card-note">Each point is a record. Orange points are flagged anomalies.</p>
+      <div class="dashboard-chart"><canvas id="scatterChart" aria-label="Units sold compared with inventory level"></canvas></div>
+    </section>
+  </div>
+  <div class="col-lg-5">
+    <section class="card dashboard-card">
+      <span class="dashboard-card-kicker">PRODUCT REVIEW</span><h2 class="chart-title">Most flagged products</h2>
+      <p class="dashboard-card-note">Products with the highest anomaly counts.</p>
+      <div class="dashboard-chart"><canvas id="productChart" aria-label="Anomaly counts by product"></canvas></div>
+    </section>
+  </div>
+  {% if charts.trend_labels %}
+  <div class="col-12">
+    <section class="card dashboard-card">
+      <span class="dashboard-card-kicker">TIME TREND</span><h2 class="chart-title">Daily anomaly rate</h2>
+      <p class="dashboard-card-note">Hover to see anomaly counts and total records per day.</p>
+      <div class="dashboard-chart dashboard-chart-wide"><canvas id="trendChart" aria-label="Daily anomaly rate"></canvas></div>
+    </section>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if summary.total %}
+<script id="dashboard-data" type="application/json">{{ charts|tojson }}</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+{% endif %}
+{% endblock %}

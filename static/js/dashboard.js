@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const data = JSON.parse(dataElement.textContent);
   const amber = '#f59e0b';
-  const amberLight = '#fcd34d';
   const grid = '#e2e8f0';
   const baseOptions = {
     responsive: true,
@@ -31,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
     type: 'bar',
     data: {
       labels: data.status_labels,
-      datasets: [{ data: data.status_values, backgroundColor: [amberLight, amber], borderRadius: 6, maxBarThickness: 64 }]
+      datasets: [{ data: data.status_values, backgroundColor: amber, borderRadius: 6, maxBarThickness: 64 }]
     },
     options: {
       ...baseOptions,
@@ -66,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
         labels: data.status_labels,
         datasets: [{
           data: data.feature_stats[featureSelect.value] || [],
-          backgroundColor: [amberLight, amber],
+          backgroundColor: amber,
           borderRadius: 6,
           maxBarThickness: 72
         }]

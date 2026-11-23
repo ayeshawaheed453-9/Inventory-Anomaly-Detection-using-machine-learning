@@ -24,10 +24,10 @@
 
 <div class="row g-3 mb-4 dashboard-metrics">
   {% for label,value,icon,tone in [
-    ('Total records',summary.total,'bi-database','blue'),
-    ('Flagged anomalies',summary.anomalies,'bi-exclamation-diamond','orange'),
-    ('Normal records',summary.normal,'bi-check2-circle','green'),
-    ('Anomaly rate',summary.pct ~ '%','bi-percent','purple')
+    ('Total records',summary.total,'bi-database','amber'),
+    ('Flagged anomalies',summary.anomalies,'bi-exclamation-diamond','amber'),
+    ('Normal records',summary.normal,'bi-check2-circle','amber'),
+    ('Anomaly rate',summary.pct ~ '%','bi-percent','amber')
   ] %}
   <div class="col-6 col-xl-3">
     <div class="dashboard-metric h-100">

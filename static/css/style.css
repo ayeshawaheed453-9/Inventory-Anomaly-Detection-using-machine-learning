@@ -178,3 +178,56 @@
     .upload-schema-toggle{font-size:0}
     .upload-schema-toggle i{font-size:.8rem}
 }
+
+/* Shared amber accent across the application */
+:root{--accent:#f59e0b;--accent-dark:#b45309;--accent-soft:#fffbeb;--teal:var(--accent);--teal-dark:var(--accent-dark);--orange:var(--accent)}
+main a:not(.btn):not(.anomalies-download):not(.anomalies-page-button):not(.dashboard-action-primary){color:var(--accent-dark)}
+.brand-mark,.metric i{color:var(--accent-dark)}
+.hero,.anomalies-hero{background:linear-gradient(125deg,#0f172a,#78350f)}
+.hero .eyebrow{color:#fde68a}
+.hero-stat span,.hero-stat small{color:#fef3c7}
+.btn-teal{background:var(--accent);border-color:var(--accent);color:#422006}
+.btn-teal:hover{background:#d97706;border-color:#d97706;color:#422006}
+.callout{background:var(--accent-soft);border-left-color:var(--accent)}
+.form-control:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 .2rem rgba(245,158,11,.16)}
+.record-count,.anomalies-page-chip{border-color:#fde68a;background:var(--accent-soft);color:var(--accent-dark)}
+.anomalies-eyebrow{color:#fde68a}
+.anomalies-hero-icon{border-color:rgba(253,230,138,.35);background:rgba(245,158,11,.16)}
+.anomalies-panel-kicker,.anomalies-clear:hover,.anomalies-filter-hint i,.anomalies-row-link,.row-link{color:var(--accent-dark)}
+.anomalies-clear:hover,.anomalies-page-button:hover{border-color:var(--accent)}
+.anomalies-score{background:var(--accent-soft);color:var(--accent-dark)}
+
+.upload-page .eyebrow,.upload-panel-kicker,.upload-drop-copy strong,.upload-submit-row p i,.upload-schema-footnote i{color:var(--accent-dark)}
+.upload-step,.upload-icon,.upload-info-icon,.upload-panel-mark,.upload-drop-icon,.upload-step-number,.upload-schema-icon{background:var(--accent-soft);color:var(--accent-dark)}
+.upload-dropzone:hover,.upload-dropzone:focus-within,.upload-dropzone.is-dragging,.upload-dropzone.has-file{border-color:var(--accent-dark);background:var(--accent-soft)}
+.upload-file-input:focus,.upload-dropzone:focus-within{box-shadow:0 0 0 .2rem rgba(245,158,11,.16)}
+.upload-privacy-note i,.required-columns-list li i,.upload-schema-toggle{color:var(--accent-dark)}
+.upload-page .btn-teal,.upload-submit{background:var(--accent);border-color:var(--accent);color:#422006}
+.upload-page .btn-teal:hover,.upload-submit:hover{background:#d97706;border-color:#d97706;color:#422006}
+.upload-hero{background:linear-gradient(125deg,#0f172a,#78350f)}
+.upload-eyebrow{color:#fde68a}
+.upload-hero-icon{border-color:rgba(253,230,138,.35);background:rgba(245,158,11,.2)}
+.upload-hero p{color:#fef3c7}
+.upload-dropzone{border-color:#fbbf24;background:linear-gradient(180deg,#fffdf7,#fff)}
+.upload-dropzone:focus-within{outline-color:rgba(245,158,11,.25)}
+.upload-drop-title{color:#451a03}
+.upload-file-selection{background:#f8fafc}
+.upload-dropzone.has-file .upload-file-selection{background:#fef3c7;color:#92400e}
+.upload-submit:focus-visible{outline-color:rgba(245,158,11,.3)}
+.upload-score-note{border-color:#fde68a;background:var(--accent-soft);color:#92400e}
+.upload-process{background:linear-gradient(180deg,#fff,#fffdf7)}
+.upload-column-list span{border-color:#fde68a;background:#fffdf7}
+
+.dashboard-hero{position:relative;overflow:hidden;padding:clamp(1.5rem,4vw,2.5rem);border-radius:1.35rem;background:linear-gradient(125deg,#0f172a,#78350f);color:#fff}
+.dashboard-hero-glow{position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(245,158,11,.24),transparent 42%);pointer-events:none}
+.dashboard-hero-content{position:relative;display:flex;align-items:center;justify-content:space-between;gap:1.5rem}
+.dashboard-hero-eyebrow{color:#fde68a}
+.dashboard-heading-mark,.dashboard-metric-icon{background:var(--accent-soft);color:var(--accent-dark)}
+.dashboard-metric-icon.blue,.dashboard-metric-icon.orange,.dashboard-metric-icon.green,.dashboard-metric-icon.purple{background:var(--accent-soft);color:var(--accent-dark)}
+.dashboard-live-badge span{background:var(--accent)}
+.dashboard-action-primary{background:var(--accent);border-color:var(--accent);color:#422006}
+.dashboard-action-primary:hover{background:#d97706;color:#422006}
+
+@media(max-width:767.98px){
+    .dashboard-hero-content{align-items:flex-start;flex-direction:column}
+}

@@ -1,23 +1,49 @@
 from pathlib import Path
 import json
 import io
+import os
 import joblib
 import pandas as pd
 import numpy as np
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, abort, render_template, request, redirect, url_for, flash, send_file
 from sklearn.ensemble import IsolationForest
-from werkzeug.utils import secure_filename
 from feature_engineering import engineer_features, validate_columns, FEATURE_COLUMNS
 from anomaly_detection import score_models, explain_record, recommend_action
 
 ROOT = Path(__file__).resolve().parent
-app = Flask(__name__)
-app.secret_key = 'inventory-anomaly-demo-key'
+IS_VERCEL = os.environ.get('VERCEL') == '1'
+app = Flask(__name__, static_folder=ROOT/'public'/'static')
+secret_key = os.environ.get('FLASK_SECRET_KEY')
+if IS_VERCEL and not secret_key:
+    raise RuntimeError('Set FLASK_SECRET_KEY in the Vercel project environment.')
+app.secret_key = secret_key or 'inventory-anomaly-demo-key'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 MODEL_DIR = ROOT / 'models'; OUTPUT_DIR = ROOT / 'outputs'; UPLOAD_DIR = ROOT / 'uploads'
-for p in [OUTPUT_DIR, UPLOAD_DIR]: p.mkdir(exist_ok=True)
+if not IS_VERCEL:
+    for p in [OUTPUT_DIR, UPLOAD_DIR]: p.mkdir(exist_ok=True)
 ANALYSIS_META_PATH = OUTPUT_DIR / 'current_analysis.json'
 MODEL_OUTPUT_COLUMNS = {'Anomaly Score', 'anomaly_score', 'kde_score', 'gmm_score', 'kmeans_score', 'baseline_score', 'pca_1', 'pca_2', 'cluster', 'Status', 'Key Indicators', 'Recommended Action'}
+BLOB_RESULTS_PATH = 'inventory-anomaly/current_results.csv'
+BLOB_METADATA_PATH = 'inventory-anomaly/current_analysis.json'
+
+
+def uses_blob_storage():
+    return IS_VERCEL or os.environ.get('VERCEL') == '1' or any(os.environ.get(name) for name in (
+        'BLOB_READ_WRITE_TOKEN', 'VERCEL_BLOB_READ_WRITE_TOKEN', 'VERCEL_OIDC_TOKEN'
+    ))
+
+
+def blob_client():
+    from vercel.blob import sync as blob
+    return blob
+
+
+def read_blob(path):
+    blob = blob_client()
+    try:
+        return blob.get_blob(path, access='private').body
+    except FileNotFoundError:
+        return None
 
 
 def artifacts():
@@ -27,6 +53,9 @@ def artifacts():
 
 
 def current_results():
+    if uses_blob_storage():
+        content = read_blob(BLOB_RESULTS_PATH)
+        return pd.read_csv(io.BytesIO(content)) if content is not None else pd.DataFrame()
     path = OUTPUT_DIR / 'current_results.csv'
     if not path.exists(): path = OUTPUT_DIR / 'anomaly_results.csv'
     if not path.exists(): return pd.DataFrame()
@@ -46,11 +75,31 @@ def numeric_feature_columns(df):
 
 
 def current_analysis_metadata():
+    if uses_blob_storage():
+        content = read_blob(BLOB_METADATA_PATH)
+        return json.loads(content) if content is not None else {}
     if not ANALYSIS_META_PATH.exists(): return {}
     return json.loads(ANALYSIS_META_PATH.read_text())
 
 
 def save_current_analysis(df, metadata):
+    if uses_blob_storage():
+        blob = blob_client()
+        blob.put_blob(
+            BLOB_RESULTS_PATH,
+            df.to_csv(index=False).encode('utf-8'),
+            access='private',
+            allow_overwrite=True,
+            content_type='text/csv',
+        )
+        blob.put_blob(
+            BLOB_METADATA_PATH,
+            json.dumps(metadata).encode('utf-8'),
+            access='private',
+            allow_overwrite=True,
+            content_type='application/json',
+        )
+        return
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     df.to_csv(OUTPUT_DIR/'current_results.csv', index=False)
     ANALYSIS_META_PATH.write_text(json.dumps(metadata))
@@ -264,10 +313,8 @@ def upload():
     if request.method=='POST':
         file=request.files.get('file')
         if not file or not file.filename.lower().endswith('.csv'): flash('Please choose a valid CSV file.','danger'); return redirect(url_for('upload'))
-        name=secure_filename(file.filename)
-        path=UPLOAD_DIR/name; file.save(path)
         try:
-            raw=pd.read_csv(path)
+            raw=pd.read_csv(file.stream)
             if validate_columns(raw):
                 df, threshold=run_generic_inference(raw)
                 flash(f'Analysis complete: {len(df):,} records scored using numeric columns. Scores at or above the 95th-percentile cutoff are flagged.','success')
@@ -295,6 +342,10 @@ def blog(): return render_template('blog.html')
 
 @app.route('/download')
 def download():
+    if uses_blob_storage():
+        content = read_blob(BLOB_RESULTS_PATH)
+        if content is None: abort(404)
+        return send_file(io.BytesIO(content), as_attachment=True, download_name='inventory_anomaly_results.csv', mimetype='text/csv')
     path=OUTPUT_DIR/'current_results.csv'
     if not path.exists(): path=OUTPUT_DIR/'anomaly_results.csv'
     return send_file(path, as_attachment=True, download_name='inventory_anomaly_results.csv', mimetype='text/csv')

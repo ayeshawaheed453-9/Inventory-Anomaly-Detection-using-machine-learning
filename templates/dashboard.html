@@ -61,7 +61,7 @@
 <div class="dashboard-context d-flex flex-column flex-md-row justify-content-between gap-2 mb-4">
   <div class="dashboard-context-item"><i class="bi bi-cpu"></i><span><strong>Detection method</strong><small>{{ 'Isolation Forest' if generic else 'Saved inventory ensemble' }}</small></span></div>
   <div class="dashboard-context-item"><i class="bi bi-sliders"></i><span><strong>Score cutoff</strong><small>{{ '%.3f'|format(charts.threshold) if charts.threshold is not none else 'Not available' }}</small></span></div>
-  <div class="dashboard-context-note"><i class="bi bi-info-circle"></i>{% if generic %}Scores are relative to this upload; the 95th-percentile score marks the review cutoff.{% else %}An alert is a review signal, not proof of an error.{% endif %}</div>
+  <div class="dashboard-context-note"><i class="bi bi-info-circle"></i>{% if generic %}Scores are relative to this upload; the 95th-percentile score marks the review cutoff.{% else %}An alert is a review signal, not proof of an error.{% endif %} Accuracy cannot be measured without verified anomaly labels.</div>
 </div>
 <div id="dashboardChartError" class="alert alert-warning d-none" role="alert"></div>
 <div class="row g-4 dashboard-grid">
@@ -112,7 +112,7 @@
   {% if charts.trend_labels %}
   <div class="{% if charts.category_labels %}col-lg-6{% else %}col-12{% endif %}">
     <section class="card dashboard-card">
-      <span class="dashboard-card-kicker">TIME TREND</span><h2 class="chart-title">Anomaly rate · {{ charts.date_name }}</h2>
+      <span class="dashboard-card-kicker">TIME TREND</span><h2 class="chart-title">Anomaly rate · {{ charts.trend_name }}</h2>
       <p class="dashboard-card-note">Percentage of records flagged in each date period.</p>
       <div class="dashboard-chart"><canvas id="trendChart" aria-label="Anomaly rate over time"></canvas></div>
     </section>

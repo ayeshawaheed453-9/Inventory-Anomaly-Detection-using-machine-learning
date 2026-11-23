@@ -22,13 +22,13 @@ def evaluate(df, models, X, scores, threshold):
     return report
 
 
-def make_eda_plots(df, output_dir='static/plots'):
+def make_eda_plots(df, output_dir='public/static/plots'):
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     sns.set_theme(style='whitegrid')
     plots = {}
     def save(name):
-        path = str(Path(output_dir) / name)
-        plt.tight_layout(); plt.savefig(path, dpi=130, bbox_inches='tight'); plt.close(); return '/' + path
+        path = Path(output_dir) / name
+        plt.tight_layout(); plt.savefig(path, dpi=130, bbox_inches='tight'); plt.close(); return '/static/plots/' + name
     plt.figure(figsize=(7,4)); sns.histplot(df['Units Sold'], bins=40, color='#2dd4bf'); plt.title('Daily sales distribution'); plots['sales_dist']=save('sales_distribution.png')
     plt.figure(figsize=(7,4)); sns.scatterplot(data=df.sample(min(5000,len(df)), random_state=42), x='Units Sold', y='Inventory Level', hue='Category', alpha=.45, legend=False); plt.title('Sales vs inventory'); plots['sales_stock']=save('sales_vs_stock.png')
     nums=['Inventory Level','Units Sold','Units Ordered','Demand Forecast','Price','Discount']

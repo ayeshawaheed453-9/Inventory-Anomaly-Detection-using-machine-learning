@@ -693,6 +693,12 @@ http://127.0.0.1:5000
 
 The application can then be used to explore inventory patterns and investigate unusual records.
 
+## Deploy to Vercel
+
+The Flask app is recognized from `app.py`. Import the Git repository into Vercel, then create and connect a **private Vercel Blob** store to the project. This app stores uploaded analysis results and metadata in Blob so they remain available across serverless requests.
+
+Set `FLASK_SECRET_KEY` as a Vercel environment variable before deploying. Connecting the Blob store supplies its credentials; do not commit credentials to the repository. The deployment uses `vercel.json` for a 60-second function duration. For local Blob testing, configure the Blob environment variables in your local environment; otherwise, the app continues to use local disk storage.
+
 ---
 
 # 23. Technologies Used

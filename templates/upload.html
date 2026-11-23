@@ -4,11 +4,11 @@
 <section class="upload-hero mb-4">
   <div class="upload-hero-content">
     <div>
-      <div class="upload-eyebrow"><span class="upload-hero-icon"><i class="bi bi-cloud-arrow-up"></i></span> DATA INGESTION</div>
-      <h1>Bring your data into focus</h1>
-      <p>Upload a CSV to identify unusual records and explore the patterns behind them.</p>
+      <div class="upload-eyebrow"><span class="upload-hero-icon"><i class="bi bi-cloud-arrow-up"></i></span> DATA WORKSPACE</div>
+      <h1>Upload your CSV</h1>
+      <p>Find unusual records in inventory data or explore patterns in another numeric dataset.</p>
     </div>
-    <span class="upload-format-badge"><i class="bi bi-filetype-csv"></i> CSV files · up to 16 MB</span>
+    <span class="upload-format-badge"><i class="bi bi-filetype-csv"></i><span>CSV format</span><i class="bi bi-dot"></i><span>Up to 16 MB</span></span>
   </div>
 </section>
 
@@ -64,18 +64,19 @@
   </div>
 
   <div class="col-12">
-    <section class="upload-schema">
-      <div class="upload-schema-heading">
+    <details class="upload-schema">
+      <summary class="upload-schema-summary">
         <span class="upload-schema-icon"><i class="bi bi-boxes"></i></span>
-        <div><h2>Using the inventory model?</h2><p>These headers select the saved inventory model. Header case and surrounding whitespace are ignored.</p></div>
-      </div>
+        <span class="upload-schema-copy"><strong>Inventory model columns</strong><small>Optional reference · header case and surrounding whitespace are ignored</small></span>
+        <span class="upload-schema-toggle">View columns <i class="bi bi-chevron-down"></i></span>
+      </summary>
       <div class="upload-column-list">
         {% for column in ['Date', 'Store ID', 'Product ID', 'Category', 'Region', 'Inventory Level', 'Units Sold', 'Units Ordered', 'Demand Forecast', 'Price', 'Discount', 'Weather Condition', 'Holiday/Promotion', 'Competitor Pricing', 'Seasonality'] %}
         <span>{{ column }}</span>
         {% endfor %}
       </div>
       <p class="upload-schema-footnote"><i class="bi bi-lightbulb"></i> Other CSVs do not need these columns. Generic analysis requires at least two rows and one varying numeric measurement; numeric-looking text may also be used when at least 90% of its non-empty values are numeric.</p>
-    </section>
+    </details>
   </div>
 </div>
 

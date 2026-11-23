@@ -1,6 +1,10 @@
+from io import BytesIO
+from pathlib import Path
+import tempfile
 from unittest.mock import patch
 
 import pandas as pd
+import app as app_module
 from app import app, current_results
 from feature_engineering import engineer_features, validate_columns
 
@@ -24,6 +28,54 @@ def test_schema_and_results():
     df=engineer_features(raw)
     assert {'Stock_to_Sales_Ratio','Days_of_Inventory','Demand_Change'}.issubset(df.columns)
     result=current_results(); assert len(result)>0 and {'Anomaly Score','Status','Key Indicators'}.issubset(result.columns)
+
+def test_generic_csv_upload_builds_dashboard_and_anomaly_charts():
+    csv='Date,Category,Amount\n2025-01-01,A,10\n2025-01-02,A,11\n2025-01-03,B,12\n2025-01-04,B,100\n'
+    with tempfile.TemporaryDirectory() as directory:
+        root=Path(directory)
+        output_dir=root/'outputs'
+        upload_dir=root/'uploads'
+        upload_dir.mkdir()
+        with patch.object(app_module,'OUTPUT_DIR',output_dir), \
+             patch.object(app_module,'UPLOAD_DIR',upload_dir), \
+             patch.object(app_module,'ANALYSIS_META_PATH',output_dir/'current_analysis.json'):
+            response=app.test_client().post(
+                '/upload',
+                data={'file':(BytesIO(csv.encode()),'sample.csv')},
+                content_type='multipart/form-data',
+                follow_redirects=True,
+            )
+            assert response.status_code==200
+            assert b'LIVE CSV' in response.data
+            assert b'id="statusChart"' in response.data
+            assert b'id="featureComparisonChart"' in response.data
+            assert b'id="categoryChart"' in response.data
+            assert b'id="trendChart"' in response.data
+            assert app.test_client().get('/anomalies').status_code==200
+
+            results=current_results()
+            charts=app_module.chart_data(results)
+            assert sum(charts['score_values'])==4
+            assert charts['feature_stats']['Amount']
+            assert charts['category_name']=='Category'
+            assert charts['trend_name']=='Date'
+
+def test_generic_constant_scores_are_not_all_flagged():
+    class ConstantScoreModel:
+        def fit(self, values):
+            return self
+
+        def decision_function(self, values):
+            return pd.Series([0.25] * len(values))
+
+    raw=pd.DataFrame({'Amount':[10,20,30]})
+    with tempfile.TemporaryDirectory() as directory:
+        output_dir=Path(directory)
+        with patch.object(app_module,'OUTPUT_DIR',output_dir), \
+             patch.object(app_module,'ANALYSIS_META_PATH',output_dir/'current_analysis.json'), \
+             patch.object(app_module,'IsolationForest',return_value=ConstantScoreModel()):
+            results,_=app_module.run_generic_inference(raw)
+    assert results['Status'].eq('NORMAL').all()
 
 if __name__=='__main__':
     test_routes(); test_anomaly_pagination(); test_schema_and_results(); print('smoke tests passed')

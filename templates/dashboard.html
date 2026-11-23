@@ -59,33 +59,34 @@
 </div>
 {% else %}
 <div class="dashboard-context d-flex flex-column flex-md-row justify-content-between gap-2 mb-4">
-  <div class="dashboard-context-item"><i class="bi bi-cpu"></i><span><strong>Detection method</strong><small>Isolation Forest</small></span></div>
+  <div class="dashboard-context-item"><i class="bi bi-cpu"></i><span><strong>Detection method</strong><small>{{ 'Isolation Forest' if generic else 'Saved inventory ensemble' }}</small></span></div>
   <div class="dashboard-context-item"><i class="bi bi-sliders"></i><span><strong>Score cutoff</strong><small>{{ '%.3f'|format(charts.threshold) if charts.threshold is not none else 'Not available' }}</small></span></div>
-  <div class="dashboard-context-note"><i class="bi bi-info-circle"></i>{% if generic %}Scores are relative to this upload, not probabilities.{% else %}An alert is a review signal, not proof of an error.{% endif %}</div>
+  <div class="dashboard-context-note"><i class="bi bi-info-circle"></i>{% if generic %}Scores are relative to this upload; the 95th-percentile score marks the review cutoff.{% else %}An alert is a review signal, not proof of an error.{% endif %}</div>
 </div>
+<div id="dashboardChartError" class="alert alert-warning d-none" role="alert"></div>
 <div class="row g-4 dashboard-grid">
   <div class="col-lg-5">
     <section class="card dashboard-card h-100">
       <div class="dashboard-card-heading">
         <div><span class="dashboard-card-kicker">RECORD STATUS</span><h2 class="chart-title">Normal vs anomaly</h2></div>
       </div>
-      <p class="dashboard-card-note">Share of all analyzed records in each status.</p>
+      <p class="dashboard-card-note">Record counts from the current dataset.</p>
       <div class="dashboard-chart"><canvas id="statusChart" aria-label="Normal and anomaly record counts"></canvas></div>
     </section>
   </div>
   <div class="col-lg-7">
     <section class="card dashboard-card h-100">
       <div><span class="dashboard-card-kicker">SCORE PROFILE</span><h2 class="chart-title">Anomaly score distribution</h2></div>
-      <p class="dashboard-card-note" id="scoreChartNote">Score bands are split by each record’s actual status. The cutoff is shown above.</p>
+      <p class="dashboard-card-note" id="scoreChartNote">Each bar counts records in a 0.1-wide score interval from 0 to 1.</p>
       <div class="dashboard-chart"><canvas id="scoreChart" aria-label="Distribution of anomaly scores"></canvas></div>
     </section>
   </div>
 
-  {% if generic %}
-  <div class="col-12">
+  {% if features %}
+  <div class="col-xl-6">
     <section class="card dashboard-card">
       <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-2">
-        <div><span class="dashboard-card-kicker">FEATURE EXPLORER</span><h2 class="chart-title mb-0">Compare values by row</h2></div>
+        <div><span class="dashboard-card-kicker">FEATURE COMPARISON</span><h2 class="chart-title mb-0">Median by record status</h2></div>
         <div class="feature-select-wrap">
           <label class="visually-hidden" for="featureSelect">Numeric feature</label>
           <select id="featureSelect" class="form-select" aria-label="Choose a numeric feature">
@@ -93,23 +94,17 @@
           </select>
         </div>
       </div>
-      <p class="dashboard-card-note" id="featureChartTitle">{{ charts.feature_name }} values by row · normal records in teal, anomalies in orange.</p>
-      <div id="featureChartError" class="alert alert-danger d-none" role="alert"></div>
-      <div class="dashboard-chart dashboard-chart-wide"><canvas id="genericFeatureChart" aria-label="Selected feature values by row"></canvas></div>
+      <p class="dashboard-card-note" id="featureChartTitle">Median {{ charts.feature_name }} for normal and flagged rows, in the feature’s original units.</p>
+      <div class="dashboard-chart"><canvas id="featureComparisonChart" aria-label="Median of the selected numeric feature by record status"></canvas></div>
     </section>
   </div>
-  <div class="col-lg-6">
-    <section class="card dashboard-card">
-      <span class="dashboard-card-kicker">FEATURE DISTRIBUTION</span><h2 class="chart-title">Selected feature values</h2>
-      <p class="dashboard-card-note">Value ranges are split by each record’s status.</p>
-      <div class="dashboard-chart"><canvas id="featureDistributionChart" aria-label="Selected feature value distribution by record status"></canvas></div>
-    </section>
-  </div>
+  {% endif %}
+
   {% if charts.category_labels %}
   <div class="col-lg-6">
     <section class="card dashboard-card">
       <span class="dashboard-card-kicker">GROUP BREAKDOWN</span><h2 class="chart-title">Anomaly rate by {{ charts.category_name }}</h2>
-      <p class="dashboard-card-note">Hover to compare flagged rows with the total in each group.</p>
+      <p class="dashboard-card-note">Percentage of records flagged in each of the most common groups.</p>
       <div class="dashboard-chart"><canvas id="categoryChart" aria-label="Anomaly rate by category"></canvas></div>
     </section>
   </div>
@@ -118,35 +113,10 @@
   <div class="{% if charts.category_labels %}col-lg-6{% else %}col-12{% endif %}">
     <section class="card dashboard-card">
       <span class="dashboard-card-kicker">TIME TREND</span><h2 class="chart-title">Anomaly rate · {{ charts.date_name }}</h2>
-      <p class="dashboard-card-note">Rate is calculated from flagged rows per period.</p>
-      <div class="dashboard-chart dashboard-chart-wide"><canvas id="genericTrendChart" aria-label="Anomaly rate over time"></canvas></div>
+      <p class="dashboard-card-note">Percentage of records flagged in each date period.</p>
+      <div class="dashboard-chart"><canvas id="trendChart" aria-label="Anomaly rate over time"></canvas></div>
     </section>
   </div>
-  {% endif %}
-  {% else %}
-  <div class="col-lg-7">
-    <section class="card dashboard-card">
-      <span class="dashboard-card-kicker">SALES & INVENTORY</span><h2 class="chart-title">Sales vs stock</h2>
-      <p class="dashboard-card-note">Each point is a record. Orange points are flagged anomalies.</p>
-      <div class="dashboard-chart"><canvas id="scatterChart" aria-label="Units sold compared with inventory level"></canvas></div>
-    </section>
-  </div>
-  <div class="col-lg-5">
-    <section class="card dashboard-card">
-      <span class="dashboard-card-kicker">PRODUCT REVIEW</span><h2 class="chart-title">Most flagged products</h2>
-      <p class="dashboard-card-note">Products with the highest anomaly counts.</p>
-      <div class="dashboard-chart"><canvas id="productChart" aria-label="Anomaly counts by product"></canvas></div>
-    </section>
-  </div>
-  {% if charts.trend_labels %}
-  <div class="col-12">
-    <section class="card dashboard-card">
-      <span class="dashboard-card-kicker">TIME TREND</span><h2 class="chart-title">Daily anomaly rate</h2>
-      <p class="dashboard-card-note">Hover to see anomaly counts and total records per day.</p>
-      <div class="dashboard-chart dashboard-chart-wide"><canvas id="trendChart" aria-label="Daily anomaly rate"></canvas></div>
-    </section>
-  </div>
-  {% endif %}
   {% endif %}
 </div>
 {% endif %}
